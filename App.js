@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,7 +8,7 @@ import Chat from './components/Chat';
 const Stack = createNativeStackNavigator();
 
 const options = {
-  statusBarColor: '#521073',
+  // statusBarColor: '#521073',
   headerStyle: {
     backgroundColor: '#521073',
   },
@@ -22,6 +21,7 @@ const options = {
 export default function App() {
   return (
     <NavigationContainer>
+
       <Stack.Navigator
         initialRouteName="Start"
       >

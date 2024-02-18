@@ -1,34 +1,38 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Button, TextInput, ImageBackground, Pressable, Dimensions, Appearance, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, Button, TextInput, ImageBackground, Pressable, Dimensions, Appearance, StatusBar } from 'react-native';
 import BackgroundLight from '../assets/backgroundLight.svg'
 import BackgroundDark from '../assets/backgroundDark.svg'
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
+// import { StatusBar } from 'expo-status-bar';
 // import Background from './Background';
 
 const Start = ({ navigation }) => {
     const [name, setName] = useState("");
-    const [mode, setMode] = useState(Appearance.getColorScheme())
+    const [mode, setMode] = useState(Appearance.getColorScheme()) // finding out the user's initial color scheme (light or dark)
     const [bgColor, setBgColor] = useState("")
     const [modeColor, setModeColor] = useState("")
-    const [screenHeight, setScreenHeight] = useState()
+    const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height)
 
+    // function used to toggle between light and dark mode
     const toggleMode = () => {
 
         if (mode === "light") {
             setMode("dark")
             setBgColor({ backgroundColor: "#521073" })
             setModeColor({ backgroundColor: "white" })
+            // navigation.setOptions({ statusBarColor: '#fff' })
         } else {
             setMode("light")
             setBgColor({ backgroundColor: "white" })
             setModeColor({ backgroundColor: "#521073" })
+            // navigation.setOptions({ statusBarColor: '#521073' })
         }
     }
 
     useEffect(() => {
 
-        setScreenHeight(Dimensions.get('window').height)
-
+        
+        // setting initial statesz
         if (mode === "light") {
             setBgColor({ backgroundColor: "white" })
             setModeColor({ backgroundColor: "#521073" })
@@ -39,11 +43,16 @@ const Start = ({ navigation }) => {
 
         console.log(mode);
         console.log(screenHeight);
-    }, [])
+    }, [mode])
 
 
     return (
         <View style={[styles.container, bgColor]}>
+            <StatusBar
+                // animated={true}
+                backgroundColor={mode === "light" ? "#521073" : "white"}
+                barStyle={mode === "light" ? "light-content" : "dark-content"}
+            />
 
             {/* Light/Dark Mode Switch */}
             <View style={[styles.modeButtonContainer, styles.shadow]}>
@@ -52,25 +61,31 @@ const Start = ({ navigation }) => {
                     android_ripple={mode === "light" ? { color: 'white' } : { color: "#521073" }}
                     onPress={toggleMode}
                 >
-                    <FontAwesome6 name="moon" size={24} color={mode === "light" ? "white" : "#521073"} solid />
+                    {mode === "light" ? (
+                        <FontAwesome6 name="moon" size={24} color={"white"} solid />
+                    ) : (
+                        <FontAwesome6 name="sun" size={24} color={"#521073"} solid />
+                    )}
+
                 </Pressable>
             </View>
 
             {/* Heading */}
             <View
-                style={{...styles.headingContainer, ...modeColor, top: screenHeight * 0.2}}>
+                style={{ ...styles.headingContainer, ...modeColor, top: screenHeight * 0.2 }}>
 
                 <Text style={mode === "light" ? { ...styles.heading, color: "white" } : { ...styles.heading, color: "#521073" }}>Welcome!</Text>
             </View>
 
-
+            {/* background element */}
             <View style={{ ...styles.background, height: screenHeight }}>
                 {mode === "light" ? (<BackgroundLight />) : (<BackgroundDark />)}
             </View>
 
+            {/* welcome container */}
             <View style={[styles.welcomeBox, styles.shadow, bgColor]}>
-
-                <View behavior="height" style={styles.textContainer}>
+                {/* username text input */}
+                <View style={styles.textContainer}>
                     <FontAwesome6 style={{ marginLeft: 2.5, marginRight: 10 }} name="user" size={20} color="grey" />
                     <TextInput
                         style={{ flex: 1 }}
@@ -80,9 +95,9 @@ const Start = ({ navigation }) => {
                         placeholderTextColor={"rgba(0,0,0,0.4)"}
                     />
                 </View>
-
+                {/* start chatting button */}
                 <Pressable style={[styles.button, modeColor]}
-                    onPress={() => navigation.navigate('Chat', { name: name })}
+                    onPress={() => navigation.navigate('Chat', { name: name, mode: mode })}
                 >
                     <Text style={mode === "light" ? { color: "white" } : { color: "#521073" }}>
                         Start Chatting
@@ -93,6 +108,7 @@ const Start = ({ navigation }) => {
     );
 }
 
+// Style Sheet
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -101,13 +117,8 @@ const styles = StyleSheet.create({
     },
     background: {
         position: "absolute",
-        // minHeight: Dimensions.get('window').height,
         height: "100%",
         width: "100%",
-        // width/: "100%",
-        // height: "100%",
-        // alignSelf: "stretch",
-        // resizeMode: "contain",
         top: 0,
         right: 0,
         bottom: 0,
