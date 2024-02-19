@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Button, TextInput, ImageBackground, Pressable, Dimensions, Appearance, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, TextInput, Platform, Pressable, Dimensions, Appearance, StatusBar } from 'react-native';
 import BackgroundLight from '../assets/backgroundLight.svg'
 import BackgroundDark from '../assets/backgroundDark.svg'
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
-// import { StatusBar } from 'expo-status-bar';
-// import Background from './Background';
 
 const Start = ({ navigation }) => {
     const [name, setName] = useState("");
@@ -13,9 +11,9 @@ const Start = ({ navigation }) => {
     const [modeColor, setModeColor] = useState("")
     const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height)
 
+
     // function used to toggle between light and dark mode
     const toggleMode = () => {
-
         if (mode === "light") {
             setMode("dark")
             setBgColor({ backgroundColor: "#521073" })
@@ -31,7 +29,6 @@ const Start = ({ navigation }) => {
 
     useEffect(() => {
 
-        
         // setting initial statesz
         if (mode === "light") {
             setBgColor({ backgroundColor: "white" })
@@ -43,16 +40,19 @@ const Start = ({ navigation }) => {
 
         console.log(mode);
         console.log(screenHeight);
+
     }, [mode])
 
 
     return (
         <View style={[styles.container, bgColor]}>
+
+            {/* phone status bar */}
             <StatusBar
-                // animated={true}
                 backgroundColor={mode === "light" ? "#521073" : "white"}
                 barStyle={mode === "light" ? "light-content" : "dark-content"}
             />
+
 
             {/* Light/Dark Mode Switch */}
             <View style={[styles.modeButtonContainer, styles.shadow]}>
@@ -77,7 +77,7 @@ const Start = ({ navigation }) => {
                 <Text style={mode === "light" ? { ...styles.heading, color: "white" } : { ...styles.heading, color: "#521073" }}>Welcome!</Text>
             </View>
 
-            {/* background element */}
+            {/* fixed background svg */}
             <View style={{ ...styles.background, height: screenHeight }}>
                 {mode === "light" ? (<BackgroundLight />) : (<BackgroundDark />)}
             </View>
@@ -95,6 +95,7 @@ const Start = ({ navigation }) => {
                         placeholderTextColor={"rgba(0,0,0,0.4)"}
                     />
                 </View>
+
                 {/* start chatting button */}
                 <Pressable style={[styles.button, modeColor]}
                     onPress={() => navigation.navigate('Chat', { name: name, mode: mode })}
@@ -104,6 +105,9 @@ const Start = ({ navigation }) => {
                     </Text>
                 </Pressable>
             </View>
+
+            {/* keyboard fix for ios */}
+            {Platform.OS === "ios" ? <KeyboardAvoidingView behavior="padding" /> : null}
         </View>
     );
 }
