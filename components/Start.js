@@ -1,16 +1,28 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, Platform, Pressable, Dimensions, Appearance, StatusBar } from 'react-native';
+import { StyleSheet, View, Text, TextInput, Platform, Pressable, Dimensions, Appearance, StatusBar, Alert } from 'react-native';
+import { signInAnonymously, initializeAuth, getReactNativePersistence, ReactNativeAsyncStorage } from "firebase/auth";
 import BackgroundLight from '../assets/backgroundLight.svg'
 import BackgroundDark from '../assets/backgroundDark.svg'
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 
-const Start = ({ navigation }) => {
+const Start = ({ navigation, auth }) => {
     const [name, setName] = useState("");
     const [mode, setMode] = useState(Appearance.getColorScheme()) // finding out the user's initial color scheme (light or dark)
     const [bgColor, setBgColor] = useState("")
     const [modeColor, setModeColor] = useState("")
     const [screenHeight, setScreenHeight] = useState(Dimensions.get('window').height)
 
+    const signInUser = () => {
+        signInAnonymously(auth)
+            .then(result => {
+                navigation.navigate('Chat', { userID: result.user.uid, name: name, mode: mode })
+                Alert.alert("Signed in Successfully!");
+            })
+            .catch((error) => {
+                console.log(error);
+                Alert.alert("Unable to sign in, try later again.");
+            })
+    }
 
     // function used to toggle between light and dark mode
     const toggleMode = () => {
@@ -98,7 +110,7 @@ const Start = ({ navigation }) => {
 
                 {/* start chatting button */}
                 <Pressable style={[styles.button, modeColor]}
-                    onPress={() => navigation.navigate('Chat', { name: name, mode: mode })}
+                    onPress={signInUser}
                 >
                     <Text style={mode === "light" ? { color: "white" } : { color: "#521073" }}>
                         Start Chatting

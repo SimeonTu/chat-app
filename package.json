@@ -14,6 +14,7 @@
     "expo": "~50.0.7",
     "expo-background-fetch": "~11.8.1",
     "expo-status-bar": "~1.11.1",
+    "firebase": "^10.8.0",
     "react": "18.2.0",
     "react-native": "0.73.4",
     "react-native-gifted-chat": "^2.4.0",

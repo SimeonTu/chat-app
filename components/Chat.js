@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, StatusBar, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, StatusBar, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
 
-const Chat = ({ route, navigation }) => {
-    const { name } = route.params;
+
+const Chat = ({ route, navigation, db }) => {
+    let { name } = route.params;
     const { mode } = route.params;
+    const { userID } = route.params;
+
+    // if no name was chosen in the start screen, format username as "Anon #(userID)"
+    if (!name) {
+        name = 'Anon #' + userID.slice(0,5);
+    }
 
     const [messages, setMessages] = useState([]);
 
     const onSend = (newMessages) => {
-        setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages))
+        addDoc(collection(db, "messages"), newMessages[0])
     }
 
     const renderBubble = (props) => {
@@ -37,7 +45,6 @@ const Chat = ({ route, navigation }) => {
         // set the theme colors depending on the mode (light or dark)
         if (mode === "light") {
             navigation.setOptions({
-                // statusBarColor: '#521073',
                 headerStyle: {
                     backgroundColor: '#521073',
                 },
@@ -45,7 +52,6 @@ const Chat = ({ route, navigation }) => {
             })
         } else {
             navigation.setOptions({
-                // statusBarColor: '#fff',
                 headerStyle: {
                     backgroundColor: '#fff',
                 },
@@ -53,25 +59,25 @@ const Chat = ({ route, navigation }) => {
             })
         }
 
-        // display example text messages
-        setMessages([
-            {
-                _id: 1,
-                text: "Hello developer",
-                createdAt: new Date(),
-                user: {
-                    _id: 2,
-                    name: "React Native",
-                    avatar: "https://static-00.iconduck.com/assets.00/user-circle-icon-2048x2048-rbk3fbd1.png",
-                },
-            },
-            {
-                _id: 2,
-                text: "You've entered the chat",
-                createdAt: new Date(),
-                system: true,
-            },
-        ]);
+        const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+        const unsubMessages = onSnapshot(q, (msgs) => {
+            let allMessages = [];
+            msgs.forEach(msg => {
+                allMessages.push({ id: msg.id, ...msg.data() })
+            });
+            console.log(new Date(allMessages[0].createdAt.seconds * 1000));
+            allMessages.forEach((msg, index) => {
+                console.log("msg is:", msg);
+                msg.createdAt = new Date(allMessages[index].createdAt.seconds * 1000)
+            })
+            console.log(allMessages[0].createdAt);
+            setMessages(allMessages);
+        });
+
+        // Clean up code
+        return () => {
+            if (unsubMessages) unsubMessages();
+        }
     }, []);
 
     return (
@@ -83,11 +89,23 @@ const Chat = ({ route, navigation }) => {
             />
 
             <GiftedChat
+                // isTyping={true}
+                alwaysShowSend={true}
+                renderUsernameOnMessage={true}
                 messages={messages}
                 renderBubble={renderBubble}
+                // custom username formatting test
+                // renderUsername={() => {
+                //     messages.forEach(msg => {
+                //         (
+                //             <Text style={{ paddingLeft: 6, paddingBottom: 6, paddingTop: 0, paddingRight: 0, textAlign: "center" }}>~ {msg.user.name}</Text>
+                //         )
+                //     })
+                // }}
                 onSend={messages => onSend(messages)}
                 user={{
-                    _id: 1
+                    _id: userID,
+                    name: name
                 }}
             />
 
