@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, StatusBar, KeyboardAvoidingView, Platform, Text } from 'react-native';
-import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
-const Chat = ({ route, navigation, db }) => {
+const Chat = ({ route, navigation, db, isConnected }) => {
     let { name } = route.params;
     const { mode } = route.params;
     const { userID } = route.params;
+    const [messages, setMessages] = useState([]);
+    let unsubMessages;
 
     // if no name was chosen in the start screen, format username as "Anon #(userID)"
     if (!name) {
-        name = 'Anon #' + userID.slice(0,5);
+        name = 'Anon #' + userID.slice(0, 5);
     }
-
-    const [messages, setMessages] = useState([]);
 
     const onSend = (newMessages) => {
         addDoc(collection(db, "messages"), newMessages[0])
@@ -32,6 +32,24 @@ const Chat = ({ route, navigation, db }) => {
                 }
             }}
         />
+    }
+
+    const renderInputToolbar = (props) => {
+        if (isConnected) return <InputToolbar {...props} />;
+        else return null;
+    }
+
+    const cacheMessages = async (messagesToCache) => {
+        try {
+            await AsyncStorage.setItem('all_messages', JSON.stringify(messagesToCache));
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
+
+    const loadCachedMessages = async () => {
+        let cachedMessages = await AsyncStorage.getItem("all_messages") || [];
+        setMessages(JSON.parse(cachedMessages));
     }
 
     useEffect(() => {
@@ -59,26 +77,38 @@ const Chat = ({ route, navigation, db }) => {
             })
         }
 
-        const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-        const unsubMessages = onSnapshot(q, (msgs) => {
-            let allMessages = [];
-            msgs.forEach(msg => {
-                allMessages.push({ id: msg.id, ...msg.data() })
+        // fetch from firestore only if there's an internet connection
+        if (isConnected === true) {
+
+            // unregister current onSnapshot() listener to avoid registering multiple listeners when useEffect code is re-executed.
+            if (unsubMessages) unsubMessages();
+            unsubMessages = null;
+
+            // listening for DB updates in real time with the firestore onSnapshot() function
+            const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+            unsubMessages = onSnapshot(q, (msgs) => {
+                let allMessages = [];
+                msgs.forEach(msg => {
+                    allMessages.push({ id: msg.id, ...msg.data() })
+                });
+                // console.log(new Date(allMessages[0].createdAt.seconds * 1000));
+
+                // converting unix timestamp to date and time
+                allMessages.forEach((msg, index) => {
+                    // console.log("msg is:", msg);
+                    msg.createdAt = new Date(allMessages[index].createdAt.seconds * 1000)
+                })
+
+                cacheMessages(allMessages)
+                setMessages(allMessages);
             });
-            console.log(new Date(allMessages[0].createdAt.seconds * 1000));
-            allMessages.forEach((msg, index) => {
-                console.log("msg is:", msg);
-                msg.createdAt = new Date(allMessages[index].createdAt.seconds * 1000)
-            })
-            console.log(allMessages[0].createdAt);
-            setMessages(allMessages);
-        });
+        } else loadCachedMessages()
 
         // Clean up code
         return () => {
             if (unsubMessages) unsubMessages();
         }
-    }, []);
+    }, [isConnected]);
 
     return (
         <View style={{ flex: 1 }}>
@@ -94,6 +124,7 @@ const Chat = ({ route, navigation, db }) => {
                 renderUsernameOnMessage={true}
                 messages={messages}
                 renderBubble={renderBubble}
+                renderInputToolbar={renderInputToolbar}
                 // custom username formatting test
                 // renderUsername={() => {
                 //     messages.forEach(msg => {

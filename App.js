@@ -1,10 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect } from "react";
+import { StyleSheet, LogBox, Text, View, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, signInAnonymously, initializeAuth, getReactNativePersistence, ReactNativeAsyncStorage } from "firebase/auth";
-import { LogBox } from 'react-native';
+import { getFirestore, disableNetwork, enableNetwork } from "firebase/firestore";
+import { getAuth, signInAnonymously, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { useNetInfo } from "@react-native-community/netinfo";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import Start from './components/Start';
 import Chat from './components/Chat';
 
@@ -14,6 +16,7 @@ LogBox.ignoreLogs(["AsyncStorage has been extracted from"]);
 // Create the navigator
 const Stack = createNativeStackNavigator();
 
+// options for the react navigation header
 const options = {
   // statusBarColor: '#521073',
   headerStyle: {
@@ -27,6 +30,9 @@ const options = {
 
 export default function App() {
 
+  // represents the current network connectivity status
+  const connectionStatus = useNetInfo();
+
   // Your web app's Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyCpa1yNJDYY_tBu80RTp2igQtnqx-ZSens",
@@ -37,17 +43,43 @@ export default function App() {
     appId: "1:232187425400:web:07941d089f7c9b9d0f338d"
   };
 
+  let app, auth;
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+  // if (!getApps().length) statement fixes the "FirebaseError: Firebase: Error (auth/already-initialized)" error
+  // initialize firebase app and authentication
+  if (!getApps().length) {
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = initializeAuth(app, {
+        persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+      });
+    } catch (error) {
+      console.log("Error initializing app: " + error);
+    }
+  } else {
+    app = getApp();
+    auth = getAuth(app);
+  }
 
-  // authenticate firebase app
-  const auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-  });
+  // // Initialize Firebase
+  // const app = initializeApp(firebaseConfig);
+
+  // // authenticate firebase app
+  // const auth = initializeAuth(app, {
+  //   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+  // });
 
   // Initialize Cloud Firestore and get a reference to the service
   const db = getFirestore(app);
+
+  useEffect(() => {
+    if (connectionStatus.isConnected === false) {
+      Alert.alert("Connection Lost!");
+      disableNetwork(db);
+    } else if (connectionStatus.isConnected === true) {
+      enableNetwork(db);
+    }
+  }, [connectionStatus.isConnected]);
 
   return (
     <NavigationContainer>
@@ -67,7 +99,7 @@ export default function App() {
           name="Chat"
           options={options} // hide the top navigation bar
         >
-          {props => <Chat db={db} {...props} />}
+          {props => <Chat db={db} isConnected={connectionStatus.isConnected} {...props} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
