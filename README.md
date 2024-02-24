@@ -38,7 +38,7 @@
 
 ## Technologies used:
 - React Native - AsyncStorage, react-native-maps
-- Expo - ImagePicker, MediaLibrary, Locatio
+- Expo - ImagePicker, MediaLibrary, Location
 - Google Firebase - Firestore, Storage
 - GiftedChat library
 
