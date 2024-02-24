@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View, StatusBar, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import { collection, addDoc, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import MapView from 'react-native-maps';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CustomActions from './CustomActions';
 
-const Chat = ({ route, navigation, db, isConnected }) => {
+const Chat = ({ route, navigation, db, storage, isConnected }) => {
     let { name } = route.params;
     const { mode } = route.params;
     const { userID } = route.params;
@@ -37,6 +39,33 @@ const Chat = ({ route, navigation, db, isConnected }) => {
     const renderInputToolbar = (props) => {
         if (isConnected) return <InputToolbar {...props} />;
         else return null;
+    }
+
+    const renderCustomActions = (props) => {
+        return <CustomActions storage={storage} userID={userID} {...props} />;
+    };
+
+    const renderCustomView = (props) => {
+        const { currentMessage } = props;
+        if (currentMessage.location) {
+            return (
+                <MapView
+                    style={{
+                        width: 150,
+                        height: 100,
+                        borderRadius: 13,
+                        margin: 3
+                    }}
+                    region={{
+                        latitude: currentMessage.location.latitude,
+                        longitude: currentMessage.location.longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                />
+            );
+        }
+        return null;
     }
 
     const cacheMessages = async (messagesToCache) => {
@@ -125,6 +154,8 @@ const Chat = ({ route, navigation, db, isConnected }) => {
                 messages={messages}
                 renderBubble={renderBubble}
                 renderInputToolbar={renderInputToolbar}
+                renderActions={renderCustomActions}
+                renderCustomView={renderCustomView}
                 // custom username formatting test
                 // renderUsername={() => {
                 //     messages.forEach(msg => {

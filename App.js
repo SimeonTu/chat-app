@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { getFirestore, disableNetwork, enableNetwork } from "firebase/firestore";
 import { getAuth, signInAnonymously, initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { initializeApp, getApps, getApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
 import { useNetInfo } from "@react-native-community/netinfo";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import Start from './components/Start';
@@ -61,16 +62,9 @@ export default function App() {
     auth = getAuth(app);
   }
 
-  // // Initialize Firebase
-  // const app = initializeApp(firebaseConfig);
-
-  // // authenticate firebase app
-  // const auth = initializeAuth(app, {
-  //   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-  // });
-
-  // Initialize Cloud Firestore and get a reference to the service
+  // Initialize Cloud Firestore and Cloud Storage and get a reference to the services
   const db = getFirestore(app);
+  const storage = getStorage(app);
 
   useEffect(() => {
     if (connectionStatus.isConnected === false) {
@@ -99,7 +93,7 @@ export default function App() {
           name="Chat"
           options={options} // hide the top navigation bar
         >
-          {props => <Chat db={db} isConnected={connectionStatus.isConnected} {...props} />}
+          {props => <Chat db={db} storage={storage} isConnected={connectionStatus.isConnected} {...props} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
