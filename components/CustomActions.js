@@ -4,16 +4,20 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 
+// component used when pressing on the "+" icon in the chat field to share additional things such as an image or location
 const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userID }) => {
 
+    // defining the variable for the action menu which contains the various sharing options
     const actionSheet = useActionSheet();
 
+    // generate a unique reference string for each new file upload to Firebase Storage
     const generateReference = (uri) => {
         const timeStamp = (new Date()).getTime();
         const imageName = uri.split("/")[uri.split("/").length - 1];
         return `${userID}-${timeStamp}-${imageName}`;
     }
 
+    // upload selected file to Firebase Storage and then send it in the chat
     const uploadAndSendImage = async (imageURI) => {
         const uniqueRefString = generateReference(imageURI);
         const newUploadRef = ref(storage, uniqueRefString);
@@ -25,6 +29,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userID })
         });
     }
 
+    // function that allows us to pick an image from the device after giving permissions
     const pickImage = async () => {
         let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (permissions?.granted) {
@@ -37,6 +42,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userID })
         }
     }
 
+    // function that allows us to take a photo from the device after giving permissions
     const takePhoto = async () => {
         let permissions = await ImagePicker.requestCameraPermissionsAsync();
         if (permissions?.granted) {
@@ -49,6 +55,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userID })
         }
     }
 
+    // function that allows us to send our location after giving permissions
     const getLocation = async () => {
         let permissions = await Location.requestForegroundPermissionsAsync();
         if (permissions?.granted) {
@@ -64,6 +71,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userID })
         } else Alert.alert("Permissions haven't been granted.");
     }
 
+    // functionality of the action menu
     const onActionPress = () => {
         const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
         const cancelButtonIndex = options.length - 1;
@@ -89,6 +97,7 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, storage, userID })
     };
 
     return (
+        // returns a circle button with a "+" inside it which opens up the action menu
         <Pressable
             accessible={true}
             accessibilityLabel='More options'
